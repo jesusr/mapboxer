@@ -2,7 +2,7 @@
   "name": "mapboxer",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/mapboxer.js",
   "scripts": {
     "test": "nyc mocha --require @babel/register  test/mapboxer.spec.js",
     "test-debug": "NODE_DEBUG=\"fs\" DEBUG=\"*\" nyc mocha --require @babel/register  test/mapboxer.spec.js"
