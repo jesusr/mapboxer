@@ -1,12 +1,16 @@
 import * as MapboxGL from 'mapbox-gl';
 import * as MapUtils from './mapUtils';
 import { ERROR1 } from './errors';
+import NamedMap from './namedMap';
+import Source from './source';
 const defaultValues = {
     center: [42, -1],
     zoom: 7
 };
 class MapBoxer {
     constructor(opt = {}) {
+        this.sources = {};
+        this.namedMaps = {};
         if (opt.container) {
             this.options = this.parseOptions(opt);
             this.map = this.initMap(this.options);
@@ -24,6 +28,7 @@ class MapBoxer {
     }
     initViewport() {
         this.cartoMapsInitialize();
+        this.sourcesInitialize();
     }
     parseOptions(opt) {
         opt.container = this.parseContainer(opt.container);
@@ -33,7 +38,8 @@ class MapBoxer {
     parseViewport(vp, container) {
         let view = {};
         if (vp.polygon || (vp.radius && vp.center)) {
-            view = MapUtils.getCenterZoomFromGeoJson(vp.polygon || (vp.polygon = MapUtils.geojsonCircle(vp.center, vp.radius)), container);
+            view = MapUtils.getCenterZoomFromGeoJson(vp.polygon
+                || (vp.polygon = MapUtils.geojsonCircle(vp.center, vp.radius)), container);
         }
         return {
             center: vp.center || view.center || defaultValues.center,
@@ -43,31 +49,31 @@ class MapBoxer {
         };
     }
     parseContainer(container) {
-        container = isElement(container) ? container : (typeof container === 'string' ? getElementFromStr(container) : null);
+        container = isElement(container) ? container
+            : (typeof container === 'string' ? getElementFromStr(container) : null);
         if (!container) throw new Error(ERROR1);
         return container;
     }
-    /* cartoMapsInitialize() {
-        
+    cartoMapsInitialize() {
+        Object.keys(this.options.namedMaps).forEach((element) => {
+            this.namedMaps[element] = new NamedMap(this.options.namedMaps[element]);
+        });
     }
-    loadNamedMapTiles(url, mapName, filter = {}) {
-        return new Promise((resolve, reject) => {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(filter), // builder named-maps has no parameter provider
+    sourcesInitialize() {
+        Object.keys(this.options.sources || {}).forEach((element) => {
+            this.sources[element] = new Source({
+                source: this.options.sources[element],
+                map: this.map
             });
-            if (response.status === 200) {
-                const layergroup = await response.json();
-                resolve(layergroup.metadata.tilejson.vector.tiles.map((url) => {
-                    return url + '?auth_token=' + consts.CARTO_MAPS[mapName].CARTO_TOKEN;
-                }));
-            } else {
-                reject(response);
-            }
+        });
+    }
+
+    /* cartoMapsRequest() {
+        const proms = [];
+        Promise.all(proms).then((...args) => {
+            resolve(args);
+        }).catch((...args) => {
+            reject(args);
         });
     } */
 }

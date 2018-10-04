@@ -65,7 +65,6 @@
     "default-case": [2],
     "dot-location": [2, "property"],
     "dot-notation": [2],
-    "eqeqeq": [2],
     "guard-for-in": [0],
     "no-alert": [2],
     "no-caller": [2],
@@ -132,7 +131,6 @@
     "no-undef-init": [2],
     "no-undefined": [2],
     "no-unused-vars": [2],
-    "no-use-before-define": [2],
 
     "callback-return": [0],
     "global-require": [0],
@@ -159,7 +157,7 @@
     "eol-last": [2],
     "func-names": [0],
     "func-style": [0],
-    "indent": [2, 2],
+    "indent": [2, 4],
     "jsx-quotes": [2, "prefer-single"],
     "key-spacing": [2, {
       "beforeColon": false,
@@ -186,7 +184,6 @@
     "no-mixed-spaces-and-tabs": [2],
     "no-multiple-empty-lines": [2],
     "no-negated-condition": [0],
-    "no-nested-ternary": [2],
     "no-new-object": [2],
     "no-plusplus": [0],
     "no-spaced-func": [2],

@@ -41,7 +41,7 @@
   "nyc": {
     "cache": true,
     "sourceMap": false,
-    "instrument": true,
+    "instrument": false,
     "check-coverage": true,
     "each-file": true,
     "lines": 0,
