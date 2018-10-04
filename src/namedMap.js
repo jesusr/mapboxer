@@ -11,7 +11,7 @@ export default class NamedMap {
         this.options = opt;
         this.options.baseUrl = this.options.baseUrl || defaultValue.baseUrl;
         this.url = this.setUrl();
-        this.filter = opt.filter;
+        this.filter = this.options.filter;
     }
     update(newOpt) {
         this.tilejson = null;
@@ -35,20 +35,20 @@ export default class NamedMap {
     }
     loadNamedMap(filter = {}) {
         return new Promise((resolve, reject) => {
-            fetch(this.getNamedMapUrl(this.options.name), {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(filter)
-            }).then((response) => {
-                this.parseNamedMapResponse(response, resolve, reject);
-            });
+            const http = new XMLHttpRequest();
+            http.open('POST', this.getNamedMapUrl(this.options.name));
+            http.setRequestHeader('Accept', 'application/json');
+            http.setRequestHeader('Content-Type', 'application/json');
+            http.send(JSON.stringify(filter));
+            http.onreadystatechange = function () {
+                if (this.readyState === 4) {
+                    this.parseNamedMapResponse(JSON.parse(http.responseText), http.status, resolve, reject);
+                }
+            };
         });
     }
-    parseNamedMapResponse(response, resolve, reject) {
-        if (response.status === 200) {
+    parseNamedMapResponse(response, status, resolve, reject) {
+        if (status == 200) {
             const layergroup = response.json();
             resolve(layergroup.metadata.tilejson.vector.tiles.map((url) => {
                 return `${url}?auth_token=${this.options.token}`;

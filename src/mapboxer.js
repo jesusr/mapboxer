@@ -1,6 +1,6 @@
 import * as MapboxGL from 'mapbox-gl';
 import * as MapUtils from './mapUtils';
-import { ERROR1 } from './errors';
+import { ERROR1, ERROR3 } from './errors';
 import NamedMap from './namedMap';
 import Source from './source';
 const defaultValues = {
@@ -27,8 +27,11 @@ class MapBoxer {
         return map;
     }
     initViewport() {
-        this.cartoMapsInitialize();
-        this.sourcesInitialize();
+        this.cartoMapsInitialize().then(() => {
+            this.sourcesInitialize();
+        }).catch(() => {
+            throw Error(ERROR3);
+        });
     }
     parseOptions(opt) {
         opt.container = this.parseContainer(opt.container);
@@ -55,27 +58,33 @@ class MapBoxer {
         return container;
     }
     cartoMapsInitialize() {
-        Object.keys(this.options.namedMaps).forEach((element) => {
-            this.namedMaps[element] = new NamedMap(this.options.namedMaps[element]);
+        return new Promise((res, rej) => {
+            const proms = [];
+            Object.keys(this.options.namedMaps).forEach((element) => {
+                this.namedMaps[element] = new NamedMap(this.options.namedMaps[element]);
+            });
+            Object.keys(this.namedMaps).forEach((element) => {
+                proms.push(this.namedMaps[element].update());
+            });
+            Promise.all(proms).then(() => {
+                res();
+            }).catch((err) => {
+                rej(err);
+            });
         });
     }
     sourcesInitialize() {
         Object.keys(this.options.sources || {}).forEach((element) => {
-            this.sources[element] = new Source({
-                source: this.options.sources[element],
-                map: this.map
+            this.sources[element] = [];
+            this.options.sources[element].forEach((o) => {
+                this.sources[element].push(new Source({
+                    source: o,
+                    tiles: this.namedMaps[element],
+                    map: this.map
+                }));
             });
         });
     }
-
-    /* cartoMapsRequest() {
-        const proms = [];
-        Promise.all(proms).then((...args) => {
-            resolve(args);
-        }).catch((...args) => {
-            reject(args);
-        });
-    } */
 }
 
 function getElementFromStr(c) {

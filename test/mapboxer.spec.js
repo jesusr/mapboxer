@@ -1,11 +1,12 @@
 import { expect } from 'chai';
 import rewiremock from 'rewiremock';
 import jsdom from 'mocha-jsdom';
-// import sinon from 'sinon';
+import sinon from 'sinon';
 import * as ERRORS from '../src/errors';
 import NamedMap from '../src/namedMap';
 let MapBoxer;
-
+const addSourceSpy = sinon.spy();
+const xhr = sinon.useFakeXMLHttpRequest();
 class MapMock {
     constructor(opt) {
         this.created = true;
@@ -19,7 +20,11 @@ class MapMock {
         const toExecute = this.evHandlers.filter((o) => o.evName === evName);
         toExecute.forEach((o) => o.fn());
     }
+    addSource() {
+        addSourceSpy();
+    }
 }
+
 class LngLatMock {
     constructor(lng, lat) {
         return { lng, lat };
@@ -189,7 +194,7 @@ describe('Mapboxer', () => {
         expect(mapboxer.namedMaps.services.url).to.be
             .equal('https://carto.com/user/user/api/v1/map/named/name?auth_token=token');
     });
-    it('Named maps attached without url base', () => {
+    it('Named maps attached without url base, gets the default base url', () => {
         document.body.appendChild(document.createElement('div'));
         const opt = { container: 'div', viewport: { center: [0, 0], zoom: 9 } };
         opt.namedMaps = {
@@ -205,5 +210,49 @@ describe('Mapboxer', () => {
         expect(mapboxer.namedMaps.services.url).to.be
             .equal('https://carto.com/user/user/api/v1/map/named/name?auth_token=token');
     });
-    afterEach(() => rewiremock.disable());
+    it('Sources attached, autoadded or not', (done) => {
+        const requests = [];
+        xhr.onCreate = function (x) {
+            requests.push(x);
+        };
+        const response = {
+            layergroup: {
+                metadata: {
+                    tilejson: {
+                        vector: {
+                            tiles: ['a', 'b']
+                        }
+                    }
+                }
+            }
+        };
+        document.body.appendChild(document.createElement('div'));
+        const opt = { container: 'div', viewport: { center: [0, 0], zoom: 9 } };
+        opt.namedMaps = {
+            services: { user: 'user', name: 'name', token: 'token' }
+        };
+        opt.sources = {
+            services: [{
+                id: 'services',
+                type: 'vector',
+                autoAdd: true
+            }, {
+                id: 'services2',
+                type: 'geojson',
+                autoAdd: false
+            }]
+        };
+        const mapboxer = new MapBoxer(opt);
+        mapboxer.map.trigger('load');
+        requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(response));
+        setTimeout(() => {
+            expect(mapboxer.sources.services.length).to.be.equal(2);
+            expect(mapboxer.sources.services[0].added).to.be.equal(true);
+            expect(mapboxer.sources.services[1].added).to.be.equal(false);
+            done();
+        }, 1000);
+    });
+    afterEach(() => {
+        rewiremock.disable();
+    });
 });
