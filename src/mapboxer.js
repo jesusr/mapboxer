@@ -47,8 +47,8 @@ class MapBoxer {
         if (!container) throw new Error(ERROR1);
         return container;
     }
-    cartoMapsInitialize() {
-
+    /* cartoMapsInitialize() {
+        
     }
     loadNamedMapTiles(url, mapName, filter = {}) {
         return new Promise((resolve, reject) => {
@@ -68,8 +68,8 @@ class MapBoxer {
             } else {
                 reject(response);
             }
-        }
-    }
+        });
+    } */
 }
 
 function getElementFromStr(c) {

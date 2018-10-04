@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import rewiremock from 'rewiremock';
 import jsdom from 'mocha-jsdom';
+import sinon from 'sinon';
 import * as ERRORS from '../src/errors';
 let MapBoxer;
 
