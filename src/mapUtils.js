@@ -34,7 +34,7 @@ function getCenterZoomFromGeoJson(geojson, el) {
 
     return {
         zoom: Math.min(latZoom, lngZoom, ZOOM_MAX),
-        center: new MapboxGL.LngLatBounds(sw, ne).getCenter().toArray(),
+        center: new MapboxGL.LngLatBounds(sw, ne).getCenter().toArray()
     };
 }
 
@@ -52,8 +52,8 @@ function isPointInPolygon(point, polygon) {
     return booleanPointInPolygon(point, polygon);
 }
 
-function getPolygonFromBbox(bbox) {
-    return bboxPolygon(bbox);
+function getPolygonFromBbox(bb) {
+    return bboxPolygon(bb);
 }
 
 function isIntersectedPolygons(poly1, poly2) {
@@ -71,4 +71,4 @@ export {
     isIntersectedPolygons,
     geojsonCircle,
     bboxFromPolygon
-}
+};

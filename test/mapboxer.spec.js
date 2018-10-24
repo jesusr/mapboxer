@@ -194,7 +194,7 @@ describe('Mapboxer', () => {
         expect(mapboxer.namedMaps.services.url).to.be
             .equal('https://carto.com/user/user/api/v1/map/named/name?auth_token=token');
     });
-    it('Named maps attached without url base, gets the default base url', () => {
+    it.only('Named maps attached without url base, gets the default base url', (done) => {
         document.body.appendChild(document.createElement('div'));
         const opt = { container: 'div', viewport: { center: [0, 0], zoom: 9 } };
         opt.namedMaps = {
@@ -206,9 +206,13 @@ describe('Mapboxer', () => {
         };
         const mapboxer = new MapBoxer(opt);
         mapboxer.map.trigger('load');
-        expect(mapboxer.namedMaps.services).to.be.instanceof(NamedMap);
-        expect(mapboxer.namedMaps.services.url).to.be
-            .equal('https://carto.com/user/user/api/v1/map/named/name?auth_token=token');
+        setTimeout(() => {
+            console.log(mapboxer.namedMaps.services);
+            expect(mapboxer.namedMaps.services).to.be.instanceof(NamedMap);
+            expect(mapboxer.namedMaps.services.url).to.be
+                .equal('https://carto.com/user/user/api/v1/map/named/name?auth_token=token');
+            done();
+        }, 1500);
     });
     it('Sources attached, autoadded or not', (done) => {
         const requests = [];

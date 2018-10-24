@@ -12,7 +12,8 @@ export default class Source {
     addSource() {
         this.map.addSource(this.opt.name, {
             type: this.opt.type,
-            tiles: this.tiles,
+            tiles: this.tiles[this.opt.type].tiles,
+            visibility: 'visible',
             minZoom: this.opt.minZoom || 0,
             maxZoom: this.opt.maxZoom || 23
         });

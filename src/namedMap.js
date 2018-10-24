@@ -15,7 +15,7 @@ export default class NamedMap {
     }
     update(newOpt) {
         this.tilejson = null;
-        this.parseOptions(newOpt);
+        if (newOpt) this.parseOptions(newOpt);
         return this.getTilejson();
     }
     getTilejson() {
@@ -35,26 +35,28 @@ export default class NamedMap {
     }
     loadNamedMap(filter = {}) {
         return new Promise((resolve, reject) => {
-            const http = new XMLHttpRequest();
-            http.open('POST', this.getNamedMapUrl(this.options.name));
-            http.setRequestHeader('Accept', 'application/json');
-            http.setRequestHeader('Content-Type', 'application/json');
-            http.send(JSON.stringify(filter));
-            http.onreadystatechange = function () {
-                if (this.readyState === 4) {
-                    this.parseNamedMapResponse(JSON.parse(http.responseText), http.status, resolve, reject);
-                }
-            };
+            fetch(this.url, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(filter)
+            }).then((data) => data.json()).catch((err) => reject(err))
+                .then((data) => resolve(this.parseNamedMapResponse(data)));
         });
     }
-    parseNamedMapResponse(response, status, resolve, reject) {
-        if (status == 200) {
-            const layergroup = response.json();
-            resolve(layergroup.metadata.tilejson.vector.tiles.map((url) => {
-                return `${url}?auth_token=${this.options.token}`;
-            }));
-        } else {
-            reject(response);
+    parseNamedMapResponse(response, resolve, reject) {
+        if (response.metadata.tilejson.vector && response.metadata.tilejson.vector.tiles) {
+            response.metadata.tilejson.vector.tiles = response.metadata.tilejson.vector.tiles.map((url) => {
+                return this.options.token ? `${url}?auth_token=${this.options.token}` : url;
+            });
         }
+        if (response.metadata.tilejson.raster && response.metadata.tilejson.raster.tiles) {
+            response.metadata.tilejson.raster.tiles = response.metadata.tilejson.raster.tiles.map((url) => {
+                return this.options.token ? `${url}?auth_token=${this.options.token}` : url;
+            });
+        }
+        return response.metadata.tilejson;
     }
 }
