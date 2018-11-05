@@ -14,14 +14,14 @@ export default class NamedMap {
         this.filter = this.options.filter;
     }
     update(newOpt) {
-        this.tilejson = null;
         if (newOpt) this.parseOptions(newOpt);
+        else this.tilejson = null;
         return this.getTilejson();
     }
     getTilejson() {
         return new Promise((res, rej) => {
             if (this.tilejson) return res(this.tilejson);
-            this.loadNamedMap().then((tilejson) => {
+            this.loadNamedMap(this.filter).then((tilejson) => {
                 this.tilejson = tilejson;
                 return res(tilejson);
             }).catch((err) => {
@@ -35,18 +35,25 @@ export default class NamedMap {
     }
     loadNamedMap(filter = {}) {
         return new Promise((resolve, reject) => {
-            fetch(this.url, {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(filter)
-            }).then((data) => data.json()).catch((err) => reject(err))
-                .then((data) => resolve(this.parseNamedMapResponse(data)));
+            console.log('FILTER', filter);
+            this.requestNamedMap(filter)
+                .then((data) => { console.log('data1', data); return data.json(); })
+                .catch((err) => reject(err))
+                .then((data) => { console.log('data2', data); resolve(this.parseNamedMapResponse(data)); });
         });
     }
-    parseNamedMapResponse(response, resolve, reject) {
+    requestNamedMap(filter) {
+        return fetch(this.url, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(filter)
+        });
+    }
+    parseNamedMapResponse(response) {
+        console.log(response);
         if (response.metadata.tilejson.vector && response.metadata.tilejson.vector.tiles) {
             response.metadata.tilejson.vector.tiles = response.metadata.tilejson.vector.tiles.map((url) => {
                 return this.options.token ? `${url}?auth_token=${this.options.token}` : url;

@@ -53,7 +53,8 @@
     ],
     "reporter": [
       "lcov",
-      "text"
+      "text",
+      "html"
     ],
     "sourceMap": false,
     "instrument": false

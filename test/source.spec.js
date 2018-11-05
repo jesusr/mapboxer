@@ -8,6 +8,8 @@ class MapMock {
         this.opt = opt;
         this.evHandlers = [];
         this.addSource = opt.addSourceSpy;
+        this.removeSource = opt.removeSourceSpy;
+        this.getSource = opt.getSourceSpy;
     }
 }
 
@@ -39,5 +41,43 @@ describe('Mapboxer Source class', () => {
             minZoom: 0,
             maxZoom: 23
         }));
+    });
+    it('Constructor with options, map and tiles, with autoAdd, should call map instance addSource', () => {
+        const addSourceSpy = sinon.spy();
+        const mapmock = new MapMock({ addSourceSpy });
+        const options = {
+            map: mapmock,
+            tiles: { vector: { tiles: ['url1', 'url2'] } },
+            source: { type: 'vector', name: 'nameExample', autoAdd: true }
+        };
+        assert(new Source(options) && addSourceSpy.calledWith(options.source.name, {
+            type: options.source.type,
+            tiles: options.tiles[options.source.type].tiles,
+            visibility: 'visible',
+            minZoom: 0,
+            maxZoom: 23
+        }));
+    });
+    it('When remove, should call map instance removeSource', () => {
+        const addSourceSpy = sinon.spy();
+        const removeSourceSpy = sinon.spy();
+        const getSourceSpy = sinon.stub().returns(true);
+        const mapmock = new MapMock({ addSourceSpy, removeSourceSpy, getSourceSpy });
+        const options = {
+            map: mapmock,
+            tiles: { vector: { tiles: ['url1', 'url2'] } },
+            source: { type: 'vector', name: 'nameExample' }
+        };
+        const sourceInstance = new Source(options);
+        sourceInstance.addSource();
+        assert(addSourceSpy.calledWith(options.source.name, {
+            type: options.source.type,
+            tiles: options.tiles[options.source.type].tiles,
+            visibility: 'visible',
+            minZoom: 0,
+            maxZoom: 23
+        }));
+        sourceInstance.removeSource(options.source.name);
+        assert(addSourceSpy.calledWith(options.source.name));
     });
 });
