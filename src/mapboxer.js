@@ -40,7 +40,7 @@ class MapBoxer {
             this.initEvents();
             this.initBaseLayer(map);
             this.initControls();
-            this.initViewport();
+            this.initViewport().catch((e) => { console.log(e); });
         });
         return map;
     }
@@ -72,31 +72,32 @@ class MapBoxer {
         this.controls = {};
         Object.keys(this.options.controls || {}).forEach((o) => {
             switch (o) {
-            case 'zoom':
-            case 'navigation':
-                this.controls[o] = new MapboxGL.NavigationControl(this.options.controls[o].config);
-                break;
-            case 'freedraw':
-                this.controls[o] = new MapControls.FreeDraw(this.options.controls[o].config, this.baseLayer);
-                break;
-            default:
-                return;
+                case 'zoom':
+                case 'navigation':
+                    this.controls[o] = new MapboxGL.NavigationControl(this.options.controls[o].config);
+                    break;
+                case 'freedraw':
+                    this.controls[o] = new MapControls.FreeDraw(this.options.controls[o].config, this.baseLayer);
+                    break;
+                default:
+                    return;
             }
             this.map.addControl(this.controls[o], this.options.controls[o].position);
         });
         this.triggerEvent('ControlsLoaded');
     }
     initViewport() {
-        this.cartoMapsInitialize().then(() => {
+        return this.cartoMapsInitialize().then(() => {
             this.sourcesInitialize();
             this.layerInitialize();
         }).catch(() => {
-            throw Error(ERROR3);
+            throw new Error(ERROR3);
         });
     }
     parseOptions(opt) {
         opt.container = this.parseContainer(opt.container);
         opt.viewport = this.parseViewport(opt.viewport || {}, opt.container);
+        opt.controls = opt.controls || {};
         return opt;
     }
     parseViewport(vp, container) {
@@ -104,8 +105,6 @@ class MapBoxer {
         if (vp.polygon || (vp.radius && vp.center)) {
             view = MapUtils.getCenterZoomFromGeoJson(vp.polygon
                 || (vp.polygon = MapUtils.geojsonCircle(vp.center, vp.radius)), container);
-            console.log(vp.zoom);
-            console.log(view.zoom);
         }
         return {
             center: vp.center || view.center || defaultValues.center,

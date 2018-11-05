@@ -1,15 +1,16 @@
+import { ERROR4, ERROR5 } from './errors';
 export default class Source {
-    constructor(opt) {
-        this.opt = opt.source;
+    constructor(opt = {}) {
+        this.opt = opt.source || {};
         this.tiles = opt.tiles;
-        this.map = opt.map;
+        this.map = opt.map || null;
         this.added = false;
-        if (this.opt.autoAdd) {
-            this.addSource();
-        }
+        if (!this.opt.name || !this.opt.type) throw new Error(ERROR4);
+        if (this.opt.autoAdd) this.addSource();
         return this;
     }
     addSource() {
+        if (!(this.tiles && this.tiles[this.opt.type] && this.map)) throw new Error(ERROR5);
         this.map.addSource(this.opt.name, {
             type: this.opt.type,
             tiles: this.tiles[this.opt.type].tiles,

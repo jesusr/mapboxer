@@ -6,7 +6,6 @@ import * as ERRORS from '../src/errors';
 import NamedMap from '../src/namedMap';
 let MapBoxer;
 const addSourceSpy = sinon.spy();
-const xhr = sinon.useFakeXMLHttpRequest();
 class MapMock {
     constructor(opt) {
         this.created = true;
@@ -194,7 +193,7 @@ describe('Mapboxer', () => {
         expect(mapboxer.namedMaps.services.url).to.be
             .equal('https://carto.com/user/user/api/v1/map/named/name?auth_token=token');
     });
-    it.only('Named maps attached without url base, gets the default base url', (done) => {
+    it('Named maps attached without url base, gets the default base url', (done) => {
         document.body.appendChild(document.createElement('div'));
         const opt = { container: 'div', viewport: { center: [0, 0], zoom: 9 } };
         opt.namedMaps = {
@@ -207,54 +206,11 @@ describe('Mapboxer', () => {
         const mapboxer = new MapBoxer(opt);
         mapboxer.map.trigger('load');
         setTimeout(() => {
-            console.log(mapboxer.namedMaps.services);
             expect(mapboxer.namedMaps.services).to.be.instanceof(NamedMap);
             expect(mapboxer.namedMaps.services.url).to.be
                 .equal('https://carto.com/user/user/api/v1/map/named/name?auth_token=token');
             done();
         }, 1500);
-    });
-    it('Sources attached, autoadded or not', (done) => {
-        const requests = [];
-        xhr.onCreate = function (x) {
-            requests.push(x);
-        };
-        const response = {
-            layergroup: {
-                metadata: {
-                    tilejson: {
-                        vector: {
-                            tiles: ['a', 'b']
-                        }
-                    }
-                }
-            }
-        };
-        document.body.appendChild(document.createElement('div'));
-        const opt = { container: 'div', viewport: { center: [0, 0], zoom: 9 } };
-        opt.namedMaps = {
-            services: { user: 'user', name: 'name', token: 'token' }
-        };
-        opt.sources = {
-            services: [{
-                id: 'services',
-                type: 'vector',
-                autoAdd: true
-            }, {
-                id: 'services2',
-                type: 'geojson',
-                autoAdd: false
-            }]
-        };
-        const mapboxer = new MapBoxer(opt);
-        mapboxer.map.trigger('load');
-        requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(response));
-        setTimeout(() => {
-            expect(mapboxer.sources.services.length).to.be.equal(2);
-            expect(mapboxer.sources.services[0].added).to.be.equal(true);
-            expect(mapboxer.sources.services[1].added).to.be.equal(false);
-            done();
-        }, 1000);
     });
     afterEach(() => {
         rewiremock.disable();
