@@ -46,7 +46,7 @@ rewiremock('mapbox-gl').with({
 
 rewiremock.enable();
 
-describe('Mapboxer', () => {
+describe('Mapboxer Base class', () => {
     jsdom({ url: 'http://localhost' });
     beforeEach(() => {
         rewiremock.enable();

@@ -4,8 +4,9 @@ import * as MapUtils from './mapUtils';
 import * as turfHelper from '@turf/helpers';
 
 class FreeDraw {
-    constructor(opt, baseLayer) {
+    constructor(opt = {}, baseLayer) {
         this.options = opt;
+        this.options.config = this.options.config || {};
         this.active = false;
         this.polygonLayer = baseLayer;
         this.eventsFnRef = {
@@ -31,15 +32,18 @@ class FreeDraw {
     onAdd(map) {
         this.map = map;
         this.container = document.createElement('div');
-        this.container.className = `map-draw mapboxgl-ctrl ${this.options.button.class}`;
+        this.container.className = `map-draw mapboxgl-ctrl ${this.options.config.button ? this.options.config.button.class : ''}`;
         this.container.style.cssText = `cursor:pointer;text-align:center;
-            line-height:${getProperlyLineHeight(this.options.button.height, this.options.button.text.size)};
-            width: ${this.options.button.width || '56px'};
-            height: ${this.options.button.height || '56px'};
-            background-color:${this.options.button.background.color || '#111'};
-            color:${this.options.button.text.color || 'white'};
-            font-size: ${this.options.button.text.size || '56px'};`;
-        this.container.textContent = this.options.button.text.text;
+            line-height:
+            ${getProperlyLineHeight(this.options.config.button ? this.options.config.button.height : '56px', this.options.config.button ? this.options.config.button.text.size : '12px')};
+            width: ${this.options.config.button && this.options.config.button.width ? this.options.config.button.width : '56px'};
+            height: ${this.options.config.button && this.options.config.button.height ? this.options.config.button.height : '56px'};
+            background-color:
+            ${this.options.config.button && this.options.config.button.background ? this.options.config.button.background.color : '#111'};
+            color:${this.options.config.button ? this.options.config.button.text.color : 'white'};
+            font-size: ${this.options.config.button ? this.options.config.button.text.size : '56px'};`;
+        this.container.textContent = this.options.config.button && this.options.config.button.text
+            ? this.options.config.button.text.text : 'FD';
         this.registerListeners();
         return this.container;
     }
@@ -149,8 +153,7 @@ class FreeDraw {
         }
         const abbox = bbox(poly);
         const features = this.map.queryRenderedFeatures(
-            [this.map.project([abbox[0], abbox[1]]),
-                this.map.project([abbox[2], abbox[3]])],
+            [this.map.project([abbox[0], abbox[1]]), this.map.project([abbox[2], abbox[3]])],
             { layers },
         );
         const toRet = features.filter((f) => {

@@ -1,12 +1,14 @@
+import { ERROR6 } from './errors';
 export default class Layer {
     constructor(opt) {
+        if (opt) this.parseOptions(opt); else throw new Error(ERROR6);
+        if (this.opt.autoAdd) this.addLayer();
+        return this;
+    }
+    parseOptions(opt) {
         this.opt = opt.layer;
         this.map = opt.map;
         this.added = false;
-        if (this.opt.autoAdd) {
-            this.addLayer();
-        }
-        return this;
     }
     addLayer() {
         if (this.map.getSource(this.opt.source)) {
@@ -15,8 +17,8 @@ export default class Layer {
         }
     }
     removeLayer() {
-        if (this.map.getLayer(this.opt.name)) {
-            this.map.removeSource(this.opt.name);
+        if (this.map.getLayer(this.opt.id)) {
+            this.map.removeLayer(this.opt.id);
         }
     }
 }

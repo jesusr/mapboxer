@@ -78,6 +78,19 @@ describe('Mapboxer Source class', () => {
             maxZoom: 23
         }));
         sourceInstance.removeSource(options.source.name);
-        assert(addSourceSpy.calledWith(options.source.name));
+        assert(removeSourceSpy.calledWith(options.source.name));
+    });
+    it('When remove a non-added source, shouldn`t call the map instance removeSource', () => {
+        const removeSourceSpy = sinon.spy();
+        const getSourceSpy = sinon.stub().returns(false);
+        const mapmock = new MapMock({ removeSourceSpy, getSourceSpy });
+        const options = {
+            map: mapmock,
+            tiles: { vector: { tiles: ['url1', 'url2'] } },
+            source: { type: 'vector', name: 'nameExample' }
+        };
+        const sourceInstance = new Source(options);
+        sourceInstance.removeSource(options.source.name);
+        assert(removeSourceSpy.notCalled);
     });
 });

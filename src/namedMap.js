@@ -14,8 +14,10 @@ export default class NamedMap {
         this.filter = this.options.filter;
     }
     update(newOpt) {
-        if (newOpt) this.parseOptions(newOpt);
-        else this.tilejson = null;
+        if (newOpt) {
+            this.parseOptions(newOpt);
+            this.tilejson = null;
+        }
         return this.getTilejson();
     }
     getTilejson() {
@@ -35,11 +37,11 @@ export default class NamedMap {
     }
     loadNamedMap(filter = {}) {
         return new Promise((resolve, reject) => {
-            console.log('FILTER', filter);
             this.requestNamedMap(filter)
-                .then((data) => { console.log('data1', data); return data.json(); })
                 .catch((err) => reject(err))
-                .then((data) => { console.log('data2', data); resolve(this.parseNamedMapResponse(data)); });
+                .then((data) => data.json())
+                .then((data) => resolve(this.parseNamedMapResponse(data)))
+                .catch((err) => reject(err));
         });
     }
     requestNamedMap(filter) {
@@ -53,7 +55,6 @@ export default class NamedMap {
         });
     }
     parseNamedMapResponse(response) {
-        console.log(response);
         if (response.metadata.tilejson.vector && response.metadata.tilejson.vector.tiles) {
             response.metadata.tilejson.vector.tiles = response.metadata.tilejson.vector.tiles.map((url) => {
                 return this.options.token ? `${url}?auth_token=${this.options.token}` : url;

@@ -1,5 +1,6 @@
 const events = {};
 const EventBus = {
+    get: (ev) => ev ? events[ev] : events,
     fire: (ev, params) => {
         if (!events[ev]) return;
         events[ev].forEach((fn) => {
