@@ -5,16 +5,25 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug Tests",
             "type": "node",
             "request": "launch",
-            "name": "Mocha Tests",
-            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "cwd": "${workspaceRoot}",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "args": [
-                "--require @babel/register",
-                "--colors",
-                "${workspaceFolder}/test/mapboxer.spec.js"
+                "./{,!(node_modules)/**/}*.spec.js",
+                "--require",
+                "@babel/register",
+                "-u",
+                "tdd",
+                "--timeout",
+                "999999",
+                "--colors"
             ],
-            "internalConsoleOptions": "openOnSessionStart"
+            "runtimeArgs": [
+                "--nolazy"
+            ],
+            "sourceMaps": true
         },
         {
             "type": "node",
@@ -22,6 +31,5 @@
             "name": "Iniciar programa",
             "program": "${workspaceFolder}/index.js"
         },
-        
     ]
 }

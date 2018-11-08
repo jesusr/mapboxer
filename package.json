@@ -4,8 +4,8 @@
   "description": "",
   "main": "src/mapboxer.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test nyc mocha test/*.spec.js",
-    "test-debug": "NODE_DEBUG=\"fs\" DEBUG=\"*\" nyc mocha --require @babel/register  test/mapboxer.spec.js"
+    "test": "cross-env NODE_ENV=test nyc mocha test/*.spec.js --timeout 10000",
+    "test-debug": "cross-env NODE_DEBUG=\"fs\" DEBUG=\"*\" nyc mocha --require @babel/register test/*.spec.js"
   },
   "repository": {
     "type": "git",

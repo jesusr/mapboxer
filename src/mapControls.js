@@ -5,6 +5,7 @@ import * as turfHelper from '@turf/helpers';
 
 class FreeDraw {
     constructor(opt = {}, baseLayer) {
+        const thisObj = this;
         this.options = opt;
         this.options.config = this.options.config || {};
         this.active = false;
@@ -16,30 +17,41 @@ class FreeDraw {
         };
         this.actions = opt.actions || {};
         this.textField = opt.textField || '';
-
+        /* istanbul ignore next */
         document.addEventListener('mouseup', () => {
             setTimeout((prevActive) => {
-                if (this.active === true && prevActive === true) {
-                    this.poly = null;
-                    this.onMouseUp();
-                    this.disableDrawMode();
-                    this.polygonLayer.removePolygon();
+                if (thisObj.active === true && prevActive === true) {
+                    thisObj.poly = null;
+                    thisObj.eventsFnRef.mouseUp();
+                    thisObj.disableDrawMode();
+                    thisObj.polygonLayer.removePolygon();
                 }
-            }, 0, this.active);
+            }, 0, thisObj.active);
         });
     }
 
+    toggleMessage() {
+        // TODO: do the subcomponent that shows a custom message from configuration when the user active the component
+    }
+
     onAdd(map) {
+        const buttonWidthCond = this.options.config.button && this.options.config.button.width,
+            width = buttonWidthCond ? this.options.config.button.width : '56px',
+            height = this.options.config.button && this.options.config.button.height
+                ? this.options.config.button.height : '56px',
+            textsize = this.options.config.button ? this.options.config.button.text.size : '12px',
+            lineheight = getProperlyLineHeight(height, textsize),
+            bgcolor = this.options.config.button && this.options.config.button.background
+                ? this.options.config.button.background.color : '#111';
         this.map = map;
         this.container = document.createElement('div');
-        this.container.className = `map-draw mapboxgl-ctrl ${this.options.config.button ? this.options.config.button.class : ''}`;
+        this.container.className = `map-draw mapboxgl-ctrl
+            ${this.options.config.button ? this.options.config.button.class : ''}`;
         this.container.style.cssText = `cursor:pointer;text-align:center;
-            line-height:
-            ${getProperlyLineHeight(this.options.config.button ? this.options.config.button.height : '56px', this.options.config.button ? this.options.config.button.text.size : '12px')};
-            width: ${this.options.config.button && this.options.config.button.width ? this.options.config.button.width : '56px'};
-            height: ${this.options.config.button && this.options.config.button.height ? this.options.config.button.height : '56px'};
-            background-color:
-            ${this.options.config.button && this.options.config.button.background ? this.options.config.button.background.color : '#111'};
+            line-height:${lineheight};
+            width: ${width};
+            height: ${height};
+            background-color: ${bgcolor};
             color:${this.options.config.button ? this.options.config.button.text.color : 'white'};
             font-size: ${this.options.config.button ? this.options.config.button.text.size : '56px'};`;
         this.container.textContent = this.options.config.button && this.options.config.button.text
@@ -55,6 +67,7 @@ class FreeDraw {
             }
             this.container.parentNode.removeChild(this.container);
         }
+        console.log('mapnulled');
         this.map = null;
     }
 
@@ -69,13 +82,6 @@ class FreeDraw {
         }
         this.container.className = `map-draw mapboxgl-ctrl ${this.active ? 'active' : ''}`;
         this.map.getContainer().focus();
-        if (this.actions.mapResultsDrawControlClick) this.actions.mapResultsDrawControlClick(this.active);
-
-        // Modified: Launch custom dispatch for analytics tracking
-        if (typeof e === 'object' && e.type === 'click' && this.active && this.actions.dataLayerMapDrawClick) {
-            this.actions.dataLayerMapDrawClick();
-        }
-
         return this.active ? this.drawMode() : this.drawDeactive();
     }
 
@@ -87,11 +93,10 @@ class FreeDraw {
             this.toggleMessage(false);
         }
     }
-
+    /* istanbul ignore next */
     onMouseUp() {
         this.map.off('touchmove', this.eventsFnRef.mouseMove);
         this.map.off('mousemove', this.eventsFnRef.mouseMove);
-
         this.polygonLayer.endDraw((poly) => { this.poly = poly; });
         this.drawing = true;
         this.evClickHandler();
@@ -134,6 +139,15 @@ class FreeDraw {
         this.map.on('mouseup', this.eventsFnRef.mouseUp);
     }
 
+    disableDrawMode() {
+        this.active = false;
+        if (this.textField !== '') {
+            this.toggleMessage(this.active);
+        }
+        this.container.className = `map-draw mapboxgl-ctrl ${this.active ? 'active' : ''}`;
+        return this.drawDeactive();
+    }
+
     setVisibility(val) {
         this.container = document.querySelector('.map-draw.mapboxgl-ctrl') || this.container;
         if (val) {
@@ -148,18 +162,13 @@ class FreeDraw {
     }
 
     filterByPolygon(poly, layers) {
-        if (this.map.getZoom > 15) {
-            return null;
-        }
+        if (this.map.getZoom > 15) return null;
         const abbox = bbox(poly);
         const features = this.map.queryRenderedFeatures(
             [this.map.project([abbox[0], abbox[1]]), this.map.project([abbox[2], abbox[3]])],
             { layers },
         );
-        const toRet = features.filter((f) => {
-            return MapUtils.isPointInPolygon(turfHelper.point(f.geometry.coordinates), poly);
-        });
-        return toRet;
+        return features.filter((f) => MapUtils.isPointInPolygon(turfHelper.point(f.geometry.coordinates), poly));
     }
 }
 
