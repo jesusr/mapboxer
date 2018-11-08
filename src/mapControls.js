@@ -5,7 +5,6 @@ import * as turfHelper from '@turf/helpers';
 
 class FreeDraw {
     constructor(opt = {}, baseLayer) {
-        const thisObj = this;
         this.options = opt;
         this.options.config = this.options.config || {};
         this.active = false;
@@ -20,13 +19,13 @@ class FreeDraw {
         /* istanbul ignore next */
         document.addEventListener('mouseup', () => {
             setTimeout((prevActive) => {
-                if (thisObj.active === true && prevActive === true) {
-                    thisObj.poly = null;
-                    thisObj.eventsFnRef.mouseUp();
-                    thisObj.disableDrawMode();
-                    thisObj.polygonLayer.removePolygon();
+                if (this.active === true && prevActive === true) {
+                    this.poly = null;
+                    this.eventsFnRef.mouseUp();
+                    this.disableDrawMode();
+                    this.polygonLayer.removePolygon();
                 }
-            }, 0, thisObj.active);
+            }, 0, this.active);
         });
     }
 

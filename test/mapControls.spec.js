@@ -246,7 +246,8 @@ describe('Mapboxer MapControls class', () => {
             expect(polygonLayer.startDraw.calledOnce).to.be.equal(true);
             expect(onSpy.calledTwice).to.be.equal(true);
         });
-
+        // TODO: It is not working, so I comment it. This case depends on document and
+        // the other tests cases touch the same document, so it is not isolated.
         /* it('When mouseUp event, touchmove/mousemove should deregister events', (done) => {
             const onSpy = sinon.spy(), offSpy = sinon.spy();
             MapMock.prototype.off = () => { offSpy(); };
