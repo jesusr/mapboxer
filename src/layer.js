@@ -21,4 +21,10 @@ export default class Layer {
             this.map.removeLayer(this.opt.id);
         }
     }
+    getSourceName() {
+        return this.opt.source;
+    }
+    getSourceLayer() {
+        return this.opt['source-layer'];
+    }
 }

@@ -1,11 +1,12 @@
 import * as MapboxGL from 'mapbox-gl';
 import * as MapUtils from './mapUtils';
-import { ERROR1, ERROR3 } from './errors';
+import { ERROR1, ERROR3, ERROR7 } from './errors';
 import NamedMap from './namedMap';
 import Source from './source';
 import Layer from './layer';
 import PolygonLayer from './subcomponents/polygonLayer';
 import EventBus from './eventBus';
+import InfoboxManager from './subcomponents/infoboxManager';
 import * as MapControls from './mapControls';
 
 const defaultValues = {
@@ -72,15 +73,15 @@ class MapBoxer {
         this.controls = {};
         Object.keys(this.options.controls || {}).forEach((o) => {
             switch (o) {
-                case 'zoom':
-                case 'navigation':
-                    this.controls[o] = new MapboxGL.NavigationControl(this.options.controls[o].config);
-                    break;
-                case 'freedraw':
-                    this.controls[o] = new MapControls.FreeDraw(this.options.controls[o].config, this.baseLayer);
-                    break;
-                default:
-                    return;
+            case 'zoom':
+            case 'navigation':
+                this.controls[o] = new MapboxGL.NavigationControl(this.options.controls[o].config);
+                break;
+            case 'freedraw':
+                this.controls[o] = new MapControls.FreeDraw(this.options.controls[o].config, this.baseLayer);
+                break;
+            default:
+                return;
             }
             this.map.addControl(this.controls[o], this.options.controls[o].position);
         });
@@ -90,6 +91,7 @@ class MapBoxer {
         return this.cartoMapsInitialize().then(() => {
             this.sourcesInitialize();
             this.layerInitialize();
+            this.mapEventsInitialize();
         }).catch(() => {
             throw new Error(ERROR3);
         });
@@ -98,6 +100,7 @@ class MapBoxer {
         opt.container = this.parseContainer(opt.container);
         opt.viewport = this.parseViewport(opt.viewport || {}, opt.container);
         opt.controls = opt.controls || {};
+        InfoboxManager.options(opt.infoboxes || {});
         return opt;
     }
     parseViewport(vp, container) {
@@ -136,6 +139,35 @@ class MapBoxer {
             });
         });
     }
+    mapEventsInitialize() {
+        this.options.events.forEach((o) => {
+            if (o.event === 'hover') {
+                o.layers.forEach((p) => {
+                    this.map.on('mousemove', p, (e) => {
+                        if (e.features.length === 0) return;
+                        if (this.hoveredStateId) {
+                            this.map.setFeatureState({
+                                source: this.getSourceFromLayer(p),
+                                sourceLayer: this.getSourceLayerFromLayer(p),
+                                id: this.hoveredStateId
+                            }, { hover: false });
+                        }
+                        this.hoveredStateId = e.features[0].properties.cartodb_id;
+                        this.map.setFeatureState({
+                            sourceLayer: this.getSourceLayerFromLayer(p),
+                            source: this.getSourceFromLayer(p),
+                            id: this.hoveredStateId
+                        }, { hover: true });
+                        o.fn();
+                    });
+                });
+            }
+            o.layers.forEach((p) => {
+                this.map.on(o.event, p, (ev) => { this.getEventDest(o, ev); o.fn(ev.features); });
+            });
+        });
+    }
+
     sourcesInitialize() {
         Object.keys(this.options.sources || {}).forEach((element) => {
             this.sources[element] = [];
@@ -160,6 +192,28 @@ class MapBoxer {
             });
         });
         this.triggerEvent('LayersLoaded');
+    }
+    getEventDest(o, ev) {
+        if (o.type === 'infobox') {
+            console.log('infobox called');
+            InfoboxManager.open(ev.features[0], { map: this.map });
+        }
+    }
+    getSourceFromLayer(layerName) {
+        let layer = [];
+        Object.keys(this.layers).forEach((group) => {
+            layer = this.layers[group].filter((o) => o.opt.id === layerName);
+        });
+        if (layer[0]) return layer[0].getSourceName();
+        throw new Error(ERROR7);
+    }
+    getSourceLayerFromLayer(layerName) {
+        let layer = [];
+        Object.keys(this.layers).forEach((group) => {
+            layer = this.layers[group].filter((o) => o.opt.id === layerName);
+        });
+        if (layer[0]) return layer[0].getSourceLayer();
+        throw new Error(ERROR7);
     }
     triggerEvent(event) {
         EventBus.fire(event);

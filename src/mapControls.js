@@ -6,7 +6,7 @@ import * as turfHelper from '@turf/helpers';
 class FreeDraw {
     constructor(opt = {}, baseLayer) {
         this.options = opt;
-        this.options.config = this.options.config || {};
+        this.options.button = this.options.button || {};
         this.active = false;
         this.polygonLayer = baseLayer;
         this.eventsFnRef = {
@@ -33,30 +33,84 @@ class FreeDraw {
         // TODO: do the subcomponent that shows a custom message from configuration when the user active the component
     }
 
+    prepareButtons(additionalConfig = {}) {
+        // TODO: from config we can receive a additional button configuration that will
+        // be under the main button or aside the polygon
+        // Remove polygon aside or not; close draw
+        this.additional = {};
+        if (additionalConfig.cancel) {
+            const element = document.createElement('div');
+            element.textContent = 'x';
+            element.style.cssText = `position:absolute; width:20px; height:20px; border-radius:50%; 
+            background:#bbb;line-height:20px;font-size:13px;box-shadow:1px 0 3px 0px #333;
+            content:"\\261c";display:block;bottom:-5px;left:-5px;text-align:center;
+            vertical-align:middle;color:white;'`;
+            this.additional[additionalConfig.cancel.when] = this.additional[additionalConfig.cancel.when] || [];
+            this.additional[additionalConfig.cancel.when].push({
+                config: additionalConfig.cancel,
+                render: () => {
+                    this.container.appendChild(element);
+                },
+                unrender: () => {
+                    element.parentNode.removeChild(element);
+                }
+            });
+        }
+    }
+
+    launchAdditionals(when) {
+        this.additional[when].forEach((render) => {
+            render.render();
+        });
+    }
+    removeAdditionals(when) {
+        this.additional[when].forEach((unrender) => {
+            unrender.unrender();
+        });
+    }
+
     onAdd(map) {
-        const buttonWidthCond = this.options.config.button && this.options.config.button.width,
-            width = buttonWidthCond ? this.options.config.button.width : '56px',
-            height = this.options.config.button && this.options.config.button.height
-                ? this.options.config.button.height : '56px',
-            textsize = this.options.config.button ? this.options.config.button.text.size : '12px',
+        const buttonWidthCond = this.options.button && this.options.button.width,
+            width = buttonWidthCond ? this.options.button.width : '56px',
+            height = this.options.button && this.options.button.height
+                ? this.options.button.height : '56px',
+            textcolor = this.options.button && this.options.button.text ? this.options.button.text.color : 'white',
+            textsize = this.options.button && this.options.button.text ? this.options.button.text.size : '12px',
             lineheight = getProperlyLineHeight(height, textsize),
-            bgcolor = this.options.config.button && this.options.config.button.background
-                ? this.options.config.button.background.color : '#111';
+            bgcolor = this.options.button && this.options.button.background
+                ? this.options.button.background.color : '#111';
         this.map = map;
         this.container = document.createElement('div');
         this.container.className = `map-draw mapboxgl-ctrl
-            ${this.options.config.button ? this.options.config.button.class : ''}`;
-        this.container.style.cssText = `cursor:pointer;text-align:center;
-            line-height:${lineheight};
-            width: ${width};
-            height: ${height};
-            background-color: ${bgcolor};
-            color:${this.options.config.button ? this.options.config.button.text.color : 'white'};
-            font-size: ${this.options.config.button ? this.options.config.button.text.size : '56px'};`;
-        this.container.textContent = this.options.config.button && this.options.config.button.text
-            ? this.options.config.button.text.text : 'FD';
+            ${this.options.button ? this.options.button.class : ''}`;
+        this.container.style.cssText = `cursor:pointer;text-align:center;line-height:${lineheight};
+            width:${width};height:${height};background-color:${bgcolor};color:${textcolor};font-size:${textsize};`;
+        this.container.textContent = this.options.button && this.options.button.text
+            ? this.options.button.text.text : 'FD';
         this.registerListeners();
+        this.prepareButtons(this.options.additional);
         return this.container;
+    }
+
+    addActiveStyles() {
+        if (this.options.button && this.options.button.active) {
+            const width = this.options.button.active.width || '56px',
+                height = this.options.button.active.height || '56px',
+                textcolor = this.options.button.active.text && this.options.button.active.text.color
+                    ? this.options.button.active.text.color : 'white',
+                textsize = this.options.button.active.text && this.options.button.active.text.size
+                    ? this.options.button.text.size : '12px',
+                lineheight = getProperlyLineHeight(height, textsize),
+                bgcolor = this.options.button.active.background && this.options.button.active.background.color
+                    ? this.options.button.active.background.color : '#111';
+            this.normalStyles = this.container.style.cssText;
+            this.container.style.cssText += `line-height:${lineheight};width:${width};height:${height};
+                background-color:${bgcolor};color:${textcolor};font-size:${textsize};`;
+        }
+    }
+
+    removeActiveStyles() {
+        if (this.normalStyles) this.container.style.cssText = this.normalStyles;
     }
 
     onRemove() {
@@ -66,7 +120,6 @@ class FreeDraw {
             }
             this.container.parentNode.removeChild(this.container);
         }
-        console.log('mapnulled');
         this.map = null;
     }
 
@@ -118,6 +171,8 @@ class FreeDraw {
     drawDeactive() {
         this.map.dragPan.enable();
         document.body.classList.remove('active-draw');
+        this.removeActiveStyles();
+        this.removeAdditionals('onActivate');
         this.map.getCanvas().style.cursor = '';
         this.map.off('touchstart', this.eventsFnRef.mouseDown);
         this.map.off('mousedown', this.eventsFnRef.mouseDown);
@@ -128,6 +183,8 @@ class FreeDraw {
     drawMode() {
         this.map.dragPan.disable();
         document.body.classList.add('active-draw');
+        this.addActiveStyles();
+        this.launchAdditionals('onActivate');
         this.map.getCanvas().style.cursor = 'crosshair';
         if (this.drawing) {
             this.polygonLayer.removePolygon();
